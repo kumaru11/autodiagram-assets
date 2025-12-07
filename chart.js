@@ -57,7 +57,7 @@ class ChartForge {
     this.zoomLabel.id = 'z';
     this.zoomLabel.textContent = '100%';
 
-    this.copyBtn = this.#btn('copy', 'Copy to Clipboard', () => { this.copy(); });
+    this.copyBtn = this.#btn('copy', 'Copy URL', () => { this.copy(); });
 
     this.toolbar.append(
       this.#btn('zoomIn', 'Zoom In', () => { this.zoomIn(); }),
@@ -118,37 +118,7 @@ class ChartForge {
 
   async copy() {
     try {
-      const response = await fetch(this.url);
-
-      // For PNG, copy directly
-      if (this.format === 'png') {
-        const blob = await response.blob();
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        this.#showCopyFeedback(true);
-        return;
-      }
-
-      // For SVG, convert to base64 data URL to avoid canvas taint
-      const svgText = await response.text();
-      const base64 = btoa(unescape(encodeURIComponent(svgText)));
-      const dataUrl = `data:image/svg+xml;base64,${base64}`;
-
-      const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = dataUrl;
-      });
-
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-
-      const pngBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
-
+      await navigator.clipboard.writeText(this.url);
       this.#showCopyFeedback(true);
     } catch (err) {
       console.error('Copy failed:', err);
