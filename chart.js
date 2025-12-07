@@ -9,7 +9,8 @@ class ChartForge {
     zoomOut: '<circle cx="11" cy="11" r="8"/><path d="M8 11h6"/>',
     reset: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"/>',
     theme: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
-    download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>'
+    copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    check: '<path d="M20 6L9 17l-5-5"/>'
   };
 
   constructor({ diagram, type = 'mermaid', format = 'svg', container = document.body }) {
@@ -56,13 +57,15 @@ class ChartForge {
     this.zoomLabel.id = 'z';
     this.zoomLabel.textContent = '100%';
 
+    this.copyBtn = this.#btn('copy', 'Copy to Clipboard', () => { this.copy(); });
+
     this.toolbar.append(
       this.#btn('zoomIn', 'Zoom In', () => { this.zoomIn(); }),
       this.#btn('zoomOut', 'Zoom Out', () => { this.zoomOut(); }),
       this.#btn('reset', 'Reset', () => { this.reset(); }),
       this.zoomLabel,
       this.#btn('theme', 'Toggle Theme', () => { this.toggleTheme(); }),
-      this.#btn('download', 'Download', () => { this.download(); })
+      this.copyBtn
     );
 
     // Canvas container
@@ -113,19 +116,59 @@ class ChartForge {
     document.documentElement.dataset.theme = document.documentElement.dataset.theme ? '' : 'dark';
   }
 
-  download() {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', this.url);
-    xhr.responseType = 'blob';
-    xhr.onload = () => {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(xhr.response);
-      a.download = `diagram.${this.format}`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    };
-    xhr.onerror = () => window.open(this.url);
-    xhr.send();
+  async copy() {
+    try {
+      const response = await fetch(this.url);
+
+      // For PNG, copy directly
+      if (this.format === 'png') {
+        const blob = await response.blob();
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        this.#showCopyFeedback(true);
+        return;
+      }
+
+      // For SVG, convert to base64 data URL to avoid canvas taint
+      const svgText = await response.text();
+      const base64 = btoa(unescape(encodeURIComponent(svgText)));
+      const dataUrl = `data:image/svg+xml;base64,${base64}`;
+
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = dataUrl;
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      const pngBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+
+      this.#showCopyFeedback(true);
+    } catch (err) {
+      console.error('Copy failed:', err);
+      this.#showCopyFeedback(false);
+    }
+  }
+
+  #showCopyFeedback(success) {
+    const originalIcon = this.copyBtn.innerHTML;
+    this.copyBtn.innerHTML = this.#svg('check');
+    this.copyBtn.style.background = success ? '#22c55e' : '#ef4444';
+    this.copyBtn.style.borderColor = success ? '#22c55e' : '#ef4444';
+    this.copyBtn.style.color = '#fff';
+
+    setTimeout(() => {
+      this.copyBtn.innerHTML = originalIcon;
+      this.copyBtn.style.background = '';
+      this.copyBtn.style.borderColor = '';
+      this.copyBtn.style.color = '';
+    }, 1500);
   }
 
   getUrl() { return this.url; }
