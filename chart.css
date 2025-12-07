@@ -1,0 +1,82 @@
+:root{--b:#fff;--b2:#f5f5f5;--t:#1a1a1a;--br:#e0e0e0;--a:#2563eb}
+[data-theme=dark]{--b:#0f0f0f;--b2:#1a1a1a;--t:#f0f0f0;--br:#333;--a:#3b82f6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui;background:var(--b);color:var(--t);height:100vh;height:100dvh;overflow:hidden}
+
+/* Toolbar - desktop */
+#bar{
+  position:fixed;top:14px;right:14px;
+  display:flex;gap:6px;
+  background:var(--b2);padding:8px;border-radius:10px;
+  border:1px solid var(--br);z-index:9;
+  box-shadow:0 2px 8px rgba(0,0,0,.1)
+}
+button{
+  width:38px;height:38px;
+  border:1px solid var(--br);border-radius:6px;
+  background:var(--b);color:var(--t);
+  cursor:pointer;display:grid;place-items:center;
+  transition:all .15s
+}
+button:hover{background:var(--a);color:#fff;border-color:var(--a)}
+button:active{transform:scale(.95)}
+button svg{width:18px;height:18px}
+#z{padding:0 10px;font-size:13px;font-weight:500;display:grid;place-items:center;opacity:.7;min-width:50px}
+
+/* Canvas */
+#c{width:100vw;height:100vh;height:100dvh;overflow:hidden}
+#d{cursor:move}
+
+/* Hint */
+#h{
+  position:fixed;bottom:14px;left:50%;transform:translateX(-50%);
+  background:var(--b2);padding:6px 14px;border-radius:6px;
+  font-size:11px;opacity:.5;border:1px solid var(--br);
+  white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis
+}
+
+/* Mobile - small screens */
+@media(max-width:600px){
+  #bar{
+    top:auto;bottom:70px;right:50%;transform:translateX(50%);
+    padding:6px;gap:4px;border-radius:12px
+  }
+  button{width:44px;height:44px;border-radius:8px}
+  button svg{width:20px;height:20px}
+  #z{font-size:12px;padding:0 8px;min-width:44px}
+  #h{bottom:16px;font-size:10px;padding:5px 10px}
+}
+
+/* Tablet */
+@media(min-width:601px) and (max-width:1024px){
+  #bar{top:12px;right:12px;padding:7px;gap:5px}
+  button{width:40px;height:40px}
+}
+
+/* Large screens */
+@media(min-width:1400px){
+  #bar{top:20px;right:20px;padding:10px;gap:8px}
+  button{width:42px;height:42px}
+  button svg{width:20px;height:20px}
+  #z{font-size:14px}
+}
+
+/* Safe area for notched devices */
+@supports(padding:env(safe-area-inset-bottom)){
+  #h{padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+  @media(max-width:600px){
+    #bar{bottom:calc(70px + env(safe-area-inset-bottom))}
+  }
+}
+
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){
+  button{transition:none}
+  button:active{transform:none}
+}
+
+/* High contrast */
+@media(prefers-contrast:high){
+  button{border-width:2px}
+  #bar{border-width:2px}
+}
